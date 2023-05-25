@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.CounselHistoryDao">
+
+
+	<!-- 수업 목록 조회 -->
+	<select id="counselLectureList" resultType="kr.happyjob.study.adm.model.LectureModel">
+		/*kr.happyjob.study.adm.dao.CounselHistoryDao.LectureModel*/
+		
+		select 	le.lecture_seq as lectureSeq
+			   ,le.loginID as loginId
+			   ,le.lecture_start as lectureStart
+			   ,le.lecture_end as lectureEnd
+	           ,dc.detail_name as lectureName
+		  from tb_lecture le 
+          	  inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+          <where>
+          <if test="(lectureNo != null) and (!lectureNo.equals(''))">
+			 and le.lecture_no = #{lectureNo}
+		  </if>	 
+		  </where>	   
+		limit #{startNum}, #{pageSize}
+ 
+	</select>
+	
+	<!-- 수업  목록 수 -->
+	<select id="lectureListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.CounselHistoryDao.lectureListCnt*/
+		select  count(*)
+ 		 from tb_lecture 
+ 	    <where>
+          <if test="(lectureNo != null) and (!lectureNo.equals(''))">
+			 and lecture_no = #{lectureNo}
+		  </if>	 
+		</where>	 
+	</select>
+	
+	
+	<!-- 상담 목록 조회 -->
+	<select id="counselList" resultType="kr.happyjob.study.adm.model.CounselHistoryModel">
+         select co.consultant_no
+		       ,co.loginID
+		       ,co.stu_loginID
+               ,us2.name as stu_name
+		       ,co.consultant_counsel
+		       ,co.consultant_date  
+		       ,us.name as teacher_name
+              ,co.lecture_seq
+              ,dc.detail_name as lecture_name
+		   from consultant co
+				inner join tb_userinfo us on us.loginID = co.loginID  
+	            inner join tb_userinfo us2 on us2.loginID = co.stu_loginID  
+			    inner join tb_lecture le on le.lecture_seq = co.lecture_seq
+		        inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+            where co.lecture_seq = #{lectureSeq}
+ 		 limit #{startNum}, #{pageSize} 
+	</select>
+	
+	<!-- 상담 목록 수-->
+	<select id="counselCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.CounselHistoryDao.counselCnt*/
+ 		 select  count(*)
+ 		 	from consultant co
+ 		 where co.lecture_seq = #{lectureSeq}
+	</select>
+	
+	
+	<!-- 상담 상세 조회 -->	
+	<select id="counselSelect" resultType="kr.happyjob.study.adm.model.CounselHistoryModel">
+        select co.consultant_no
+		      ,co.loginID
+              ,co.stu_loginID
+		      ,us2.name as stu_name
+		      ,co.consultant_counsel
+		      ,co.consultant_date  
+		      ,us.name as teacher_name
+              ,dc.detail_name as lecture_name
+              ,co.consultant_content
+		  from consultant co
+				inner join tb_userinfo us on us.loginID = co.loginID 
+                inner join tb_userinfo us2 on us2.loginID = co.stu_loginID  
+		        inner join tb_lecture le on le.lecture_seq = co.lecture_seq
+		        inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+		where co.consultant_no = #{consultantNo}
+	</select>
+</mapper>

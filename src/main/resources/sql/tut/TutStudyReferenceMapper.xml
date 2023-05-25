@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.tut.dao.TutStudyReferenceDAO">
+
+   <!-- 강의 목록 조회 -->
+   <select id="LectureList" resultType="kr.happyjob.study.tut.model.TutStudyReferenceModel">
+      /*kr.happyjob.study.tut.dao.TutStudyReferenceDAO.LectureList*/      
+      SELECT tl.lecture_seq
+		      , tl.loginID
+		      , ui.name
+		      , tl.test_no
+		      , tl.lecture_no
+		      , dc.detail_name AS lecture_name
+		      , tl.lecture_person
+		      , tl.lecture_total
+		      , tl.lecture_goal
+		      , tl.lecture_start
+		      , tl.lecture_end
+		      , tl.lecture_confirm
+		  FROM tb_lecture tl
+			    INNER JOIN tb_detail_code dc ON dc.group_code = 'lecture_no' AND dc.detail_code = tl.lecture_no
+			    INNER JOIN tb_userinfo ui ON tl.loginID = ui.loginID
+          	<where>
+          		AND tl.loginID = #{loginID}
+          		AND tl.lecture_confirm = 'N'
+				<if test="(lecturename != null) and (!lecturename.equals(''))">
+				      AND lecture_no = #{lecturename}     	
+				</if>
+			</where>
+       LIMIT #{startnum}, #{pageSize}
+   </select>
+   
+   <!-- 강의 목록 총 갯수 조회 -->
+   <select id="LectureListCnt" resultType="int">
+      /*kr.happyjob.study.tut.dao.TutStudyReferenceDAO.LectureListCnt*/      
+      SELECT	COUNT(*)
+		  FROM tb_lecture tl
+			    INNER JOIN tb_detail_code dc ON dc.group_code = 'lecture_no' AND dc.detail_code = tl.lecture_no
+			    INNER JOIN tb_userinfo ui ON tl.loginID = ui.loginID
+          	<where>
+          		AND tl.loginID = #{loginID}
+          		AND tl.lecture_confirm = 'N'
+				<if test="(lecturename != null) and (!lecturename.equals(''))">
+				      AND lecture_no = #{lecturename}     	
+				</if>
+			</where>
+   </select>
+   
+   <!-- 학습자료 목록 조회 -->
+   <select id="referenceselectlist" resultType="kr.happyjob.study.tut.model.TutStudyReferenceModel">
+      /*kr.happyjob.study.tut.dao.TutStudyReferenceDAO.referenceselectlist*/      
+		SELECT tr.lecture_seq
+		      , tl.lecture_no
+		      , dc.detail_name AS lecture_name
+		      , tr.reference_no
+		      , tr.loginID
+          	  , ui.name
+		      , tr.reference_title
+		      , tr.reference_content
+		      , tr.reference_date
+		      , tr.reference_file
+		      , tr.reference_non
+		      , tr.reference_mul
+		 FROM tb_reference tr
+			  INNER JOIN tb_lecture tl ON tl.lecture_seq = tr.lecture_seq
+			  INNER JOIN tb_detail_code dc ON dc.group_code ='lecture_no' AND dc.detail_code = tl.lecture_no
+	          INNER JOIN tb_userinfo ui ON tr.loginID = ui.loginID
+         WHERE tr.lecture_seq = #{lectureseq}
+       LIMIT #{startnum}, #{pageSize}
+   </select>
+   
+   <!-- 학습자료 목록 총 갯수 조회 -->
+   <select id="referenceselectlistCnt" resultType="int">
+      /*kr.happyjob.study.tut.dao.TutStudyReferenceDAO.referenceselectlistCnt*/      
+      SELECT	COUNT(*)
+		 FROM tb_reference tr
+			  INNER JOIN tb_lecture tl ON tl.lecture_seq = tr.lecture_seq
+			  INNER JOIN tb_detail_code dc ON dc.group_code ='lecture_no' AND dc.detail_code = tl.lecture_no
+	          INNER JOIN tb_userinfo ui ON tr.loginID = ui.loginID
+         WHERE tr.lecture_seq = #{lectureseq}
+   </select>
+   
+   <!-- 학습자료 조회 -->
+   <select id="referenceselect" resultType="kr.happyjob.study.tut.model.TutStudyReferenceModel">
+      /*kr.happyjob.study.tut.dao.TutStudyReferenceDAO.referenceselect*/      
+	  SELECT tr.lecture_seq
+	      , tr.reference_no
+	      , tr.loginID
+	      , tr.reference_title
+	      , tr.reference_content
+	      , tr.reference_date
+	      , tr.reference_file
+	      , tr.reference_non
+	      , tr.reference_mul
+	  FROM tb_reference tr
+	  	INNER JOIN tb_lecture tl ON tl.lecture_seq = tr.lecture_seq
+	  WHERE tr.reference_no = #{referenceno}
+   </select>
+   
+   <insert id="referenceinsert">
+   		<selectKey resultType="int" keyProperty="newreferenceno" order="BEFORE">
+			SELECT IFNULL(MAX(reference_no + 1), 1) FROM tb_reference
+		</selectKey>
+   		INSERT INTO tb_reference
+   		(
+   			lecture_seq
+	      , reference_no
+	      , loginID
+	      , reference_title
+	      , reference_content
+	      , reference_date
+	      , reference_file
+	      , reference_non
+	      , reference_mul
+   		) VALUES (
+   			#{lectureseq}
+   			, #{newreferenceno}
+   			, #{loginID}
+   			, #{reference_title}
+   			, #{reference_content}
+   			, DATE_FORMAT(now(), '%Y-%m-%d')
+   			, #{fileInfo.file_nm}
+   			, #{fileInfo.file_non}
+   			, #{fileInfo.file_loc}
+   		)
+   </insert>
+   
+   <update id="referenceupdate">
+   		UPDATE tb_reference
+   			SET reference_title = #{reference_title}
+   			, reference_content = #{reference_content}
+   			, reference_date = DATE_FORMAT(now(), '%Y-%m-%d')
+   			, reference_file = #{fileInfo.file_nm}
+   			, reference_non = #{fileInfo.file_non}
+   			, reference_mul = #{fileInfo.file_loc}
+   		WHERE reference_no = #{referenceno}
+   </update>
+   
+   <delete id="referencedelete">
+   		DELETE FROM tb_reference
+   		WHERE reference_no = #{reference_no}
+   </delete>
+   
+</mapper>

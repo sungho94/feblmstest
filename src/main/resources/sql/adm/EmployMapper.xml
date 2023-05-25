@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.EmployDao">
+	
+	<!-- 취업 정보 등록 -->
+	<select id = "empclasslist" resultType="kr.happyjob.study.adm.model.EmployModel">
+ 		  	  select  ui.loginID
+ 		     		, ui.name
+ 		     		, ui.user_hp
+ 		     		, ui.user_regdate
+ 			   from tb_userinfo ui
+  			  <where>
+		  			and ui.user_type='A'
+  			  		<if test="(empstuSearch != null) and (!empstuSearch.equals(''))">
+  			  			 and ui.loginID like CONCAT("%", #{empstuSearch}, "%")
+  			  		</if>
+  			  </where> 
+ 		  	  LIMIT #{startnum}, #{pageSize}
+	</select>
+	
+	<!-- 취업 정보 등록 학생 cnt 확인하기. -->
+	<select id="studentclasscnt" resultType="int">
+		 select count(*)
+   		   from tb_userinfo
+   		   <where>
+   		   		and user_type='A'
+  			  	<if test="(empstuSearch != null) and (!empstuSearch.equals(''))">
+  			  		and loginID like CONCAT("%", #{empstuSearch}, "%")
+  			  	</if>
+  			</where> 
+	</select>
+	
+	<!-- 하단 학생에 대한 detail 내용 -->
+	<select id="detailcontent" resultType="kr.happyjob.study.adm.model.EmployModel">
+	  select em.employ_no
+	 		, ui.loginID
+	 		, ui.name
+	 		, em.employ_join
+	 		, em.employ_leave
+	 		, em.employ_state
+	 		, em.employ_name
+   		from tb_userinfo ui
+	   inner join tb_employ em
+	      ON ui.loginID = em.loginID
+	   where ui.user_type='A'
+	     and ui.loginID = #{stdID}
+	    ORDER BY employ_no DESC
+		LIMIT #{startnum}, #{pageSize}
+	</select>
+	
+	<!-- 하단 학생에 대한 detail 선택 내용 -->
+	<select id="sdetailcontent" resultType="kr.happyjob.study.adm.model.EmployModel">
+		select em.employ_no
+		      , em.loginID
+		      , ui.name
+		      , em.employ_name
+		      , em.employ_state
+		      , em.employ_join
+		      , em.employ_leave
+		  from tb_employ em
+		    inner join tb_userinfo ui on em.loginID = ui.loginID
+		    where em.loginID = #{stdID}
+			 and em.employ_no = #{employ_no}
+	</select>
+	
+	<!-- 취업 정보 등록 학생 cnt 확인하기. -->
+	<select id="detailcnt" resultType="int">
+		select count(*)
+ 		  from tb_employ em
+         inner join tb_userinfo ui ON ui.loginID = em.loginID
+ 		 where ui.user_type = 'A'
+ 		   and em.loginID = #{stdID}
+	</select>
+	
+	<!-- 학생 insert -->
+	<insert id="empinsert">
+		<selectKey keyProperty="emp_no" resultType="int" order="BEFORE">
+    		SELECT IFNULL(MAX(employ_no + 1 ) , 1)
+    		FROM tb_employ
+  		</selectKey>
+        insert tb_employ
+        (
+     	     employ_no
+   		   , loginID
+   		   , employ_name
+   		   , employ_state
+   		   , employ_join
+   		   , employ_leave
+        ) values (
+        	  #{emp_no}
+       		, #{stdID}
+       		, #{emp_name}
+       		, #{emp_state}
+       		, #{emp_join}
+       		, #{emp_leave}
+        )
+	</insert>
+	
+	<!-- 재직여부 update -->
+	<update id="empupdate">
+		   update tb_employ
+			  set employ_name = #{emp_name}
+  			 	, employ_state = #{emp_state}
+     			, employ_join = #{emp_join}
+     			, employ_leave = #{emp_leave}
+ 			where employ_no = #{emp_no}
+	</update>
+	
+	<!-- 재직여부 delete -->
+	<update id="empdelete">
+		delete from tb_employ
+			where employ_no = #{emp_no}
+	</update>
+</mapper>

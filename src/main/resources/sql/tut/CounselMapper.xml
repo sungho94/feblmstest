@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.tut.dao.CounselDAO">
+
+	<!-- 강의 목록 조회 -->
+	<select id="counselLectureList" resultType="kr.happyjob.study.tut.model.CounselModel">
+		/* kr.happyjob.study.tut.dao.CounselDao.counselLectureList */
+		select   lc.lecture_no
+			   , lc.loginID as tchLoginID
+			   , lc.lecture_seq
+     		   , dc.detail_name as lecture_name
+     		   , ui.name as teacherName
+    		   , lc.lecture_start
+   			   , lc.lecture_end
+  		       , tdc.detail_name as room_name
+		from tb_lecture lc
+			inner join tb_room ro on lc.room_seq = ro.room_seq
+			inner join tb_userinfo ui on lc.loginID = ui.loginID
+			inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+			inner join tb_detail_code tdc on tdc.group_code = 'room_no' and tdc.detail_code = ro.room_no
+       <where>
+    	<if test="(search != null) and (!search.equals(''))">
+			<choose>
+				<when test="select eq 'lecture'.toString()">
+					AND dc.detail_name Like CONCAT('%',#{search},'%')
+				</when>
+				<when test="select eq 'name'.toString()">
+					and ui.name Like CONCAT('%',#{search},'%')
+				</when>
+				<otherwise>
+                    and ( 
+                          dc.detail_name Like CONCAT('%',#{search},'%')
+                       or ui.name Like CONCAT('%',#{search},'%')
+                       )
+                  </otherwise>	
+			</choose>
+		</if>
+			and  lc.loginID = #{loginID}
+		</where>
+		order by lc.lecture_seq desc
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 강의 목록 조회 카운트 -->
+	<select id="counselLectureListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.counselLectureListCnt */
+		select  count(*)
+		from tb_lecture lc
+			inner join tb_room ro on lc.room_seq = ro.room_seq
+			inner join tb_userinfo ui on lc.loginID = ui.loginID
+			inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+			inner join tb_detail_code tdc on tdc.group_code = 'room_no' and tdc.detail_code = ro.room_no
+        <where>
+    	<if test="(search != null) and (!search.equals(''))">
+			<choose>
+				<when test="select eq 'lecture'.toString()">
+					AND dc.detail_name Like CONCAT('%',#{search},'%')
+				</when>
+				<when test="select eq 'name'.toString()">
+					and ui.name Like CONCAT('%',#{search},'%')
+				</when>
+				<otherwise>
+                    and ( 
+                          dc.detail_name Like CONCAT('%',#{search},'%')
+                       or ui.name Like CONCAT('%',#{search},'%')
+                       )
+                  </otherwise>	
+			</choose>
+		</if>
+			and  lc.loginID = #{loginID}
+		</where> 
+	</select>
+	
+	<!-- 학생 목록 조회 -->
+	<select id="counselStudentList" resultType="kr.happyjob.study.tut.model.CounselModel">
+		/* kr.happyjob.study.tut.dao.CounselDao.counselStudentList */
+		select  co.consultant_no
+   			  , co.loginID as tchLoginID
+    		  , co.stu_loginID as stuLoginID
+    		  , co.consultant_counsel
+    		  , co.consultant_date
+    		  , ui.name as teacherName
+          	  , uif.name as studentName
+    		  , dc.detail_name as lecture_Name
+  		from consultant co
+    		inner join tb_student st on st.lecture_seq = co.lecture_seq
+        	inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+        	inner join tb_userinfo ui ON ui.loginID = lc.loginID
+        	inner join tb_userinfo uif on uif.loginID = st.loginID
+    		inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+        where co.lecture_seq = #{lecture_seq} and st.loginID = co.stu_loginID
+ 
+		
+		order by consultant_no desc
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 학생 목록 조회 카운트 -->
+	<select id="counselStudentListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.counselStudentListCnt */
+		select  count(*)
+  		from consultant co
+    		inner join tb_student st on st.lecture_seq = co.lecture_seq
+        	inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+        	inner join tb_userinfo ui ON ui.loginID = lc.loginID
+        	inner join tb_userinfo uif on uif.loginID = st.loginID
+    		inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+        where co.lecture_seq = #{lecture_seq} and st.loginID = co.stu_loginID  
+	</select>
+	
+	<!-- 학생 상세보기 -->
+	<select id="detailStudent" resultType="kr.happyjob.study.tut.model.CounselModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.detailStudent */
+		select   dc.detail_name as lecture_Name
+			   , st.loginID as stuLoginID
+      		   , uif.name as studentName
+    		   , co.consultant_counsel
+    		   , co.consultant_date
+    		   , co.consultant_content
+    		   , co.consultant_no
+    		   , co.lecture_seq
+		from consultant co
+			inner join tb_student st on st.lecture_seq = co.lecture_seq
+			inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+			inner join tb_userinfo ui ON ui.loginID = lc.loginID
+			inner join tb_userinfo uif on uif.loginID = st.loginID
+			inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+		where co.consultant_no = #{consultant_no} and st.loginID = co.stu_loginID;
+	</select>
+	
+	<!-- 상담 일지 신규 등록 -->
+	<insert id="insertCounsel">
+		<selectKey resultType="int" keyProperty="consultant_no" order="BEFORE">
+			SELECT ifnull(max(consultant_no),0) + 1 FROM consultant;
+		</selectKey>
+		insert into consultant
+		
+			(
+					  lecture_seq
+					, consultant_no
+					, loginID
+					, stu_loginID
+					, consultant_content
+					, consultant_counsel
+					, consultant_date 	
+			) values
+			(
+					  #{lecture_seq}
+					, #{consultant_no}
+					, #{loginID}
+					, #{stu_loginID}
+					, #{consultant_content}
+					, #{consultant_counsel}
+					, DATE_FORMAT(NOW(), '%Y-%m-%d')
+					  
+			)
+	
+	</insert>
+	
+	<!-- 상담일지 수정 -->
+	<update id="updateCounsel">
+		update consultant
+			set   consultant_date = DATE_FORMAT(NOW(), '%Y-%m-%d')
+				, consultant_content = #{consultant_content}
+			where consultant_no = #{consultant_no}
+	</update>
+	
+	<!-- 상담일지 삭제 -->
+	<delete id="deleteCounsel">
+		delete from consultant 
+		where consultant_no = #{consultant_no}
+	</delete>
+	
+</mapper>

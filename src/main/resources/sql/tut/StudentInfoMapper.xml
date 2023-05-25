@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.tut.dao.StudentInfoDao">
+	<select id="lectureInfoList" resultType="kr.happyjob.study.tut.model.StudentInfoModel">
+		 SELECT
+		 		   l.lecture_seq
+			      ,dc.detail_name as lecture_name
+			      ,l.loginID as teacher_name
+			      ,l.lecture_start
+			      ,l.lecture_end
+			      ,dc2.detail_name as room_name
+			      ,l.lecture_person
+			      ,l.lecture_total
+			FROM tb_lecture l 
+			    inner join tb_detail_code dc on dc.group_code = "lecture_no" and dc.detail_code=l.lecture_no
+			    left outer join tb_room r on r.room_seq=l.room_seq
+			    inner join tb_detail_code dc2 on dc2.group_code = "room_no" and dc2.detail_code = r.room_no
+			    inner join tb_userinfo u on u.loginID = l.loginID
+		  <where>
+		  		l.loginID = #{loginID} and l.lecture_confirm="N"
+		  		<if test="(lectureNameSearch != null) and (!lectureNameSearch.equals(''))">
+				      and l.lecture_seq LIKE CONCAT('%', #{lectureNameSearch}, '%')      	
+				</if>
+			</where>
+			ORDER BY lecture_seq DESC
+       		LIMIT #{startnum}, #{pageSize}  
+		  
+	</select>
+	<select id="lectureInfoListCnt" resultType="int">
+		SELECT count(*)
+		FROM tb_lecture l 
+			    inner join tb_detail_code dc on dc.group_code = "lecture_no" and dc.detail_code=l.lecture_no
+			    left outer join tb_room r on r.room_seq=l.room_seq
+			    inner join tb_detail_code dc2 on dc2.group_code = "room_no" and dc2.detail_code = r.room_no
+			    inner join tb_userinfo u on u.loginID = l.loginID
+	<where>
+		  		l.loginID = #{loginID} and l.lecture_confirm="N"
+		  		<if test="(lectureNameSearch != null) and (!lectureNameSearch.equals(''))">
+				      and l.lecture_seq LIKE CONCAT('%', #{lectureNameSearch}, '%')      	
+				</if>
+			</where>
+	</select>
+	<select id="studentInfoList" resultType="kr.happyjob.study.tut.model.StudentInfoModel">
+		SELECT
+			   s.lecture_seq
+			  ,u.name as student_name
+		      ,u.loginID as student_no
+		      ,u.user_hp as student_hp_no
+		      ,u.user_birthday as student_birth
+		      ,s.student_survey 
+		      ,s.student_test 
+		      ,s.student_lecture 
+		FROM tb_student s
+		    inner join tb_userinfo u on s.loginID = u.loginID
+		WHERE s.lecture_seq=#{lecture_seq}
+		ORDER BY u.loginID DESC
+       	LIMIT #{startnum}, #{pageSize} 
+	</select>
+	<select id="studentInfoListCnt" resultType="int">
+		SELECT count(*)
+		FROM tb_student s
+		    inner join tb_userinfo u on s.loginID = u.loginID
+		WHERE s.lecture_seq=#{lecture_seq}
+	</select>
+	<!-- 수강생 수강여부 '승인'으로 바꾸기 -->
+	<update id="studentInfoConfirmYes" >
+		UPDATE tb_student 
+  					SET student_lecture = "Y"
+		WHERE loginID=#{loginID} AND  lecture_seq=#{lecture_seq}
+	</update>
+	
+	<!-- 수강생 수강여부 '취소'로 바꾸기 -->
+	<update id="studentInfoConfirmNo">
+		UPDATE tb_student 
+  					SET student_lecture = "N"
+		WHERE loginID=#{loginID} AND  lecture_seq=#{lecture_seq}
+	</update>
+	<!-- lecture 테이블에 현재인원 추가(+1)해주기 -->
+	<update id="lecturePersonUpdate">
+		UPDATE tb_lecture lc
+    	SET lc.lecture_person = ifnull((SELECT count(case when ts.student_lecture = 'Y' then 1 end)
+                              FROM tb_student ts
+                              WHERE lc.lecture_seq = ts.lecture_seq
+                              group by lc.lecture_seq), 0)
+    	WHERE  lc.lecture_seq = #{lecture_seq}
+	</update>
+</mapper>

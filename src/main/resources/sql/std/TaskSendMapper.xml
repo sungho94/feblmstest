@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.std.dao.TaskSendDao">
+	
+	<!-- 강의 목록  -->
+	<select id="lectureList" resultType="kr.happyjob.study.std.model.CourseInfoModel">
+	
+       /*kr.happyjob.study.std.dao.TaskSendDao.lectureListCnt*/     
+       		
+			select  sd.lecture_seq  as lectureSeq
+			      , sd.loginID
+			      , ui.name as teacherName
+			      , dc.detail_name as lectureName
+			      , sd.student_lecture as studentLecture
+			      , le.lecture_start as lectureStart
+                  , le.lecture_end as lectureEnd
+			  from tb_student sd 
+			       inner join tb_lecture le on le.lecture_seq = sd.lecture_seq
+				   inner join tb_detail_code dc on dc.group_code = 'lecture_no' and le.lecture_no = dc.detail_code
+			       inner join tb_userinfo ui on le.loginID = ui.loginID
+			where sd.loginID = #{loginid} and le.lecture_confirm = "N"  
+			                              and sd.student_lecture = "Y"
+	      <if test ="(search != null) and (!search.equals(''))">			
+						and  dc.detail_name LIKE CONCAT('%', #{search}, '%')
+		  </if>
+		   LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	
+	<!-- 강의 목록 카운트 -->
+    <select id="lectureListCnt" resultType="int">
+     
+      /*kr.happyjob.study.std.dao.TaskSendDao.lectureListCnt*/      
+      
+	      select	count(*)
+		  	from	tb_student sd 
+	          		inner join tb_lecture le on le.lecture_seq = sd.lecture_seq
+	       			inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+			        inner join tb_userinfo ui on le.loginID = ui.loginID 
+		  where sd.loginID = #{loginid} and le.lecture_confirm = "N" and sd.student_lecture = "Y"	
+	      <if test ="(search != null) and (!search.equals(''))">			
+						and  dc.detail_name LIKE CONCAT('%', #{search}, '%')
+		  </if>
+    </select>
+	
+	
+	<!-- 강의계획서 목록 조회 -->
+	<select id="taskList" resultType="kr.happyjob.study.std.model.TaskListModel">
+	  /* kr.happyjob.study.tut.dao.TaskDao.taskList */
+          select pn.lecture_seq
+                ,pn.plan_week
+                ,pn.plan_goal
+                ,ts.task_no
+                ,pn.plan_no
+                ,dc.detail_name as lectureName
+	      from tb_plan pn
+	           left outer join tb_task ts on ts.plan_no = pn.plan_no
+	           inner join tb_lecture le on le.lecture_seq = pn.lecture_seq
+	           inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+         where pn.lecture_seq = #{lectureSeq}
+         LIMIT #{startNum}, #{pageSize}
+    </select>     
+    
+    <select id="taskListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.taskListCnt */
+		
+		select count(*)
+		 from tb_plan 	
+	    where lecture_seq = #{lectureSeq}
+	</select>
+    
+	<!-- 과제 내용 조회 -->
+	<select id="taskContent" resultType="kr.happyjob.study.std.model.TaskModel">
+	  /* kr.happyjob.study.std.dao.TaskDao.taskContent */
+		  select plan_no as planNo
+	            ,task_no as taskNo
+	            ,task_title as taskTitle
+	            ,task_content as taskContent
+	            ,task_start as taskStart
+	            ,task_end as taskEnd
+	            ,task_name as taskName
+	            ,task_non as  taskNon
+	            ,task_mul as taskMul
+	        from tb_task
+	      where plan_no = #{planNo} 
+	</select>
+	
+	<!-- 제출한 과제 조회 -->
+	<select id="taskSendSelect" resultType="kr.happyjob.study.std.model.TaskSendModel">
+	      select  send_no as sendNo
+                 ,task_no as taskNo
+	             ,plan_no as planNo
+	             ,loginId 
+	             ,send_title as sendTitle
+	             ,send_content as sendContent
+	             ,DATE_FORMAT(send_date, '%Y-%m-%d') as send_date
+	             ,send_file as sendFile
+	             ,send_non as sendNon 
+	             ,send_mul as sendMul
+	       from tb_send 
+	     where plan_no = #{planNo} and loginId = #{loginId}
+	</select>
+	
+	<!-- 과제 제출 -->
+	<insert id="taskInsert">	
+		<selectKey resultType="int" keyProperty="sendNo" order="BEFORE">
+			select ifnull(max(send_no),0) + 1 from tb_send
+		</selectKey>
+	     insert into tb_send 
+	             (
+	                  send_no
+	                , task_no
+	                , plan_no
+	                , loginId
+	                , send_title
+	                , send_content
+	                , send_date
+	                , send_file
+	                , send_mul
+	                , send_non
+	             ) values (
+	                 #{sendNo}
+	               , #{taskNo} 
+	               , #{planNo}
+	               , #{loginId}
+	               , #{sendTitle}
+	               , #{sendContent}
+	               , DATE_FORMAT(now(), '%Y-%m-%d') 
+	               , #{fileInfo.file_nm}
+	               , #{fileInfo.file_loc}
+	               , #{fileInfo.file_lloc}
+	             )
+	</insert>
+	
+	<!-- 제출한 과제 수정 -->
+	<update id="taskUpdate">
+		update tb_send 
+		   set  send_title = #{sendTitle}
+	          , send_content = #{sendContent}
+	          , send_date = now()
+	          , send_file = #{fileInfo.file_nm}
+	          , send_mul = #{fileInfo.file_loc}
+	          , send_non = #{fileInfo.file_lloc}
+	      where plan_no = #{planNo} AND send_no = #{sendNo} AND task_no = #{taskNo} AND loginID = #{loginId}
+	</update>
+</mapper>

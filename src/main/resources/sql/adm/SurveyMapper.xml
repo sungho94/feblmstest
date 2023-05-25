@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.SurveyDao">
+
+	<!-- 설문조사 강사 목록 조회 -->
+	<select id="surveyTeacherList" resultType="kr.happyjob.study.adm.model.SurveyModel">
+		/*kr.happyjob.study.adm.dao.SurveyDao.surveyTeacherList*/
+		select  loginID
+     		  , name
+      		  , user_hp
+      		  , user_email
+     		  , SUBSTRING(user_regdate,1,10) as user_regdate
+ 		 from tb_userinfo
+    		
+    	<where>
+    		<if test="(search != null) and (!search.equals(''))">
+				and name LIKE CONCAT('%', #{search}, '%')
+			</if>
+			and user_type = 'B'
+    	</where>
+		
+		ORDER BY loginID DESC
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 설문조사 강사 목록 조회수 -->
+	<select id="surveyTeacherListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.SurveyDao.surveyTeacherListCnt*/
+		select  count(*)
+ 		 from tb_userinfo
+    	<where>
+    		<if test="(search != null) and (!search.equals(''))">
+				and name LIKE CONCAT('%', #{search}, '%')
+			</if>
+			and user_type = 'B'
+    	</where>
+		
+	</select>
+	
+	<!-- 설문조사 강의 목록 조회 -->
+	<select id="surveyLectureList" resultType="kr.happyjob.study.adm.model.SurveyModel">
+		SELECT    dc.detail_name as lecture_name
+        		, ui.name
+       			, lc.lecture_start
+       			, lc.lecture_end
+       			, lc.lecture_seq
+            , lc.lecture_person
+            , count(st.student_survey) as result
+  		FROM tb_lecture lc
+   		 INNER JOIN tb_userinfo ui ON ui.loginID = lc.loginID
+   		 INNER JOIN tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+         left outer JOIN tb_student st on st.lecture_seq = lc.lecture_seq 
+   		<where>
+   			<if test="(lsearch != null) and (!lsearch.equals(''))">
+   				and dc.detail_name LIKE CONCAT('%', #{lsearch}, '%')
+   			</if>
+   			and lc.loginID = #{loginID}
+   			and st.student_survey = 'Y'
+   		</where>
+   		GROUP BY lc.lecture_seq, st.student_survey
+   		ORDER BY lecture_name asc
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 설문조사 강의 목록 조회수 -->
+	<select id="surveyLectureListCnt" resultType="int">
+		select count(distinct lc.lecture_seq) 
+  		FROM tb_lecture lc
+   		 INNER JOIN tb_userinfo ui ON ui.loginID = lc.loginID
+   		 INNER JOIN tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+         left outer JOIN tb_student st on st.lecture_seq = lc.lecture_seq 
+   		<where>
+   			<if test="(lsearch != null) and (!lsearch.equals(''))">
+   				and dc.detail_name LIKE CONCAT('%', #{lsearch}, '%')
+   			</if>
+   			and lc.loginID = #{loginID}
+   			and st.student_survey = 'Y'
+   		</where>
+	</select>
+	
+	<!-- 설문조사 결과 -->
+	<select id="surveyResult" parameterType = "java.util.Map" resultType="kr.happyjob.study.adm.model.SurveyModel">
+		select sl.servey_no
+      		  ,sl.serveyitem_queno
+      		  , sum(case when sl.num = 1 then sl.cnt else 0 end) as answer1
+    		  , sum(case when sl.num = 2 then sl.cnt else 0 end) as answer2
+    		  , sum(case when sl.num = 3 then sl.cnt else 0 end) as answer3
+    		  , sum(case when sl.num = 4 then sl.cnt else 0 end) as answer4
+    		  , sum(case when sl.num = 5 then sl.cnt else 0 end) as answer5
+    		  , sl.serveyitem_question
+  		from (   
+         		 select ts.servey_no
+                ,ts.serveyitem_queno
+                ,ts.serveyitem_question 
+                ,ts.num
+                ,ifnull(ll.cnt,0) as cnt
+            from ( 
+                    select ts.servey_no
+                          ,ts.serveyitem_queno
+                          ,ts.serveyitem_question
+                          ,ll.num
+                     from tb_serveyitem ts ,
+                         (  select 1 as num
+                            union 
+                            select 2 as num
+                            union 
+                            select 3 as num
+                            union 
+                            select 4 as num
+                            union 
+                            select 5 as num
+                          ) ll
+                  ) ts
+                  left outer join ( 
+                                    select servey_no
+                                          ,serveyitem_queno
+                                          ,servey_answer
+                                          ,count(*) as cnt
+                                      from tb_servey 
+                                      where lecture_seq = #{lecture_seq}
+                                     group by servey_no,serveyitem_queno,servey_answer
+                                 ) ll on ll.serveyitem_queno  = ts.serveyitem_queno and ll.servey_no = ts.servey_no and ll.servey_answer = ts.num                      
+           order by ts.servey_no
+                   ,ts.serveyitem_queno 
+                   ,ts.num  
+       ) sl
+       where serveyitem_queno = #{serveyitem_queno}
+		group by sl.servey_no
+        		,sl.serveyitem_queno     
+		
+	</select>
+</mapper>

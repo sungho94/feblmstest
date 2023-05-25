@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.adm.dao.RoomDao">
+	
+	<select id="roomList" resultType="kr.happyjob.study.adm.model.RoomModel" >
+		SELECT
+			 rm.room_seq
+			,rm.room_no
+			,dc.detail_name as room_name
+			,dc2.detail_name as lecture_name
+			,rm.room_person
+			,l.loginID as teacher_name
+			,rm.room_status
+	        ,l.lecture_start
+	        ,l.lecture_end
+		FROM tb_room rm 
+	      left outer join tb_lecture l on l.room_seq = rm.room_seq and l.lecture_confirm="N"
+	      left outer join tb_detail_code dc2 on dc2.group_code = 'lecture_no' and dc2.detail_code=l.lecture_no
+		  left outer join tb_detail_code dc on dc.group_code = 'room_no' and dc.detail_code = rm.room_no
+			<where>
+				<if test="(stype != null) and (!stype.equals(''))">
+					<choose>
+						<when test="stype eq 'rmnumber'.toString()">
+							AND rm.room_no LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<when test="stype eq 'rmname'.toString()">
+							AND dc.detail_name LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<when test="stype eq 'teacher'.toString()">
+							AND l.loginID LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<otherwise>
+							AND ( rm.room_no LIKE CONCAT('%', #{sword}, '%')
+							or dc.detail_name LIKE CONCAT('%', #{sword}, '%')
+							or l.loginID LIKE CONCAT('%', #{sword}, '%') )
+						</otherwise>
+					</choose>
+				</if>
+		</where>
+		ORDER BY room_no DESC
+		LIMIT #{startnum}, #{pageSize}
+		
+	</select>
+	
+	<select id="roomListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.RoomDao.roomListCnt*/
+		SELECT	count(*)
+		FROM tb_room rm 
+	      left outer join tb_lecture l on l.room_seq = rm.room_seq and l.lecture_confirm="N"
+	      left outer join tb_detail_code dc2 on dc2.group_code = 'lecture_no' and dc2.detail_code=l.lecture_no
+		  left outer join tb_detail_code dc on dc.group_code = 'room_no' and dc.detail_code = rm.room_no
+			<where>
+				<if test="(stype != null) and (!stype.equals(''))">
+					<choose>
+						<when test="stype eq 'rmnumber'.toString()">
+							AND rm.room_no LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<when test="stype eq 'rmname'.toString()">
+							AND dc.detail_name LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<when test="stype eq 'teacher'.toString()">
+							AND l.loginID LIKE CONCAT('%', #{sword}, '%')
+						</when>
+						<otherwise>
+							and ( rm.room_no LIKE CONCAT('%', #{sword}, '%')
+							or dc.detail_name LIKE CONCAT('%', #{sword}, '%')
+							or l.loginID LIKE CONCAT('%', #{sword}, '%') )
+						</otherwise>
+					</choose>
+				</if>
+			</where>
+	</select>
+	<select id ="roomDetail" resultType="kr.happyjob.study.adm.model.RoomModel">
+		/*kr.happyjob.study.adm.dao.RoomDao.roomDetail*/
+		SELECT
+			 rm.room_seq
+		    ,rm.room_no
+			,dc.detail_name as room_name
+			,dc2.detail_name as lecture_name
+			,rm.room_person
+			,l.loginID as teacher_name
+			,rm.room_status
+	        ,l.lecture_start
+	        ,l.lecture_end
+		FROM tb_room rm 
+	      left outer join tb_lecture l on l.room_seq = rm.room_seq and l.lecture_confirm="N"
+	      left outer join tb_detail_code dc2 on dc2.group_code = 'lecture_no' and dc2.detail_code=l.lecture_no
+		  left outer join tb_detail_code dc on dc.group_code = 'room_no' and dc.detail_code = rm.room_no
+		WHERE rm.room_seq = #{room_seq}
+	</select>
+	<insert id="roomInsert">
+		<selectKey resultType="int" keyProperty="newroomreg" order="BEFORE">
+			SELECT ifnull(max(room_seq),0) + 1 FROM tb_room
+		</selectKey>
+		INSERT INTO tb_room
+				(	
+					room_seq
+				   ,room_no
+				   ,room_person		   
+				   ,room_status
+				) VALUES (
+					#{newroomreg}
+				   ,#{room_no}
+				   ,#{room_person}
+				   ,#{room_status}				   
+				)
+	</insert>
+	<update id="roomUpdate">
+			UPDATE tb_room
+				SET room_person = #{room_person}
+					, room_status =#{room_status}
+			WHERE room_seq = #{room_seq}
+	</update>
+	
+	<delete id="roomDelete">
+			DELETE FROM tb_room
+			WHERE room_seq = #{room_seq}
+	</delete>
+	<!-- 장비목록 조회 -->
+	<select id="itemList" resultType="kr.happyjob.study.adm.model.ItemModel">
+	/*kr.happyjob.study.adm.dao.RoomDao.itemList*/
+			SELECT room_seq
+					   ,item_no
+					   ,item_name
+					   ,item_volume
+					   ,item_note
+			FROM tb_item
+			WHERE room_seq = #{room_seq}
+			ORDER BY item_no DESC
+      		LIMIT #{startnum}, #{pageSize}
+	</select>
+	<!-- 장비목록 총 갯수 조회 -->
+	<select id="itemListCnt" resultType="int">
+	/*kr.happyjob.study.adm.dao.RoomDao.itemListCnt*/
+		SELECT	count(*)
+		FROM	tb_item
+        where room_seq= #{room_seq}
+	</select>
+	<!-- 장비상세조회 -->
+	<select id="itemDetail" resultType="kr.happyjob.study.adm.model.ItemModel">
+	/*kr.happyjob.study.adm.dao.RoomDao.itemDetail*/
+		SELECT item_no	
+			     ,room_seq
+				 ,item_volume
+				 ,item_note
+				 ,item_name
+		FROM	tb_item
+         where room_seq = #{room_seq}
+         	AND item_no=#{item_no}
+	</select>
+	<insert id="itemInsert" >
+		<selectKey resultType="int" keyProperty="newitemreg" order="BEFORE">
+			SELECT ifnull(max(item_no),0) + 1 FROM tb_item
+		</selectKey>
+		INSERT INTO tb_item
+			(
+				 item_no
+				,room_seq
+				,item_name
+				,item_volume				
+				,item_note
+					
+			)VALUES(
+				 #{newitemreg}
+				,#{room_seq}
+				,#{item_name}
+				,#{item_volume}
+				,#{item_note}
+			)
+	</insert>
+	
+	<update id="itemUpdate">
+			UPDATE tb_item
+					SET item_name = #{item_name}
+						  ,item_volume =  #{item_volume}
+						  ,item_note= #{item_note}
+				WHERE item_no =#{item_no}
+					AND room_seq=#{room_seq}
+	</update>
+	<delete id="itemDelete">
+			DELETE FROM tb_item 
+				WHERE item_no =#{item_no}
+					AND room_seq=#{room_seq}
+	</delete>
+</mapper>

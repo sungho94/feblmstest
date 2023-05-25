@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.tut.dao.TaskDao">
+	
+	<!-- 강의 목록 조회 -->
+	<select id="lectureList" resultType="kr.happyjob.study.tut.model.LectureModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.lectureList */
+	   select  le.lecture_seq as lectureSeq
+		      ,le.loginID as loginId
+		      ,le.lecture_person as lecturePerson
+		      ,le.lecture_start as lectureStart
+		      ,le.lecture_end as lectureEnd
+		      ,us.name as tutName
+         	  ,dc.detail_name as lectureName
+              ,le.lecture_goal
+              ,dc2.detail_name as roomNo
+              ,le.lecture_confirm as lectureConfirm
+		 from tb_lecture le 
+		      inner join tb_userinfo us on us.loginId = le.loginId
+              inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+              inner join tb_room rm on rm.room_seq = le.room_seq 
+              inner join tb_detail_code dc2 on dc2.group_code = 'room_no' and dc2.detail_code = rm.room_no
+	   where le.loginID =  #{loginid} and le.lecture_confirm = "N"
+			<if test="(lecbyuserall != null) and (!lecbyuserall.equals(''))">
+				and le.lecture_no = #{lecbyuserall}
+			</if> 
+		LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<select id="lectureListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.lectureListCnt */
+		
+		select count(*)
+		 from tb_lecture le 
+	    where loginID = #{loginid} and le.lecture_confirm = "N"
+			<if test="(lecbyuserall != null) and (!lecbyuserall.equals(''))">
+				and lecture_no = #{lecbyuserall}
+			</if> 
+	</select>
+	
+	<!-- 강의계획서 목록 조회 -->
+	<select id="planList" resultType="kr.happyjob.study.tut.model.PlanListModel">
+	  /* kr.happyjob.study.tut.dao.TaskDao.planList */
+	   select plan_no as planNo
+            , lecture_seq as lectureSeq
+            , plan_week as planWeek
+            , plan_goal as planGoal
+         from tb_plan 	
+       where lecture_seq = #{lectureNo}
+       LIMIT #{startNum}, #{pageSize}
+    </select>     
+    
+    <select id="planListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.planListCnt */
+		select count(*)
+		 from tb_plan 	 
+			where lecture_seq = #{lectureNo}
+	</select>
+    
+    
+	<!-- 과제관리 목록 조회 -->
+	<select id="taskList" resultType="kr.happyjob.study.tut.model.TaskModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.taskList */
+		
+        select pn.lecture_seq as lectureSeq
+        	  ,ts.plan_no as planNo
+              ,ts.task_title as taskTitle
+              ,ts.task_start as taskStart
+              ,ts.task_end as taskEnd
+         from tb_task ts
+              inner join tb_plan pn on pn.plan_no = ts.plan_no 
+        where ts.plan_no = #{planNo}
+        LIMIT #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- 목록수 -->
+	<select id="taskListCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.taskListCnt */
+		
+		select count(*)
+		 from tb_task ts
+	      where ts.plan_no = #{planNo}
+	</select>
+	
+	
+	<!-- 과제 상세조회 -->
+	<select id="taskDetail" resultType="kr.happyjob.study.tut.model.TaskModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.taskDetail */
+		
+        select ts.plan_no as planNo
+              ,ts.task_title as taskTitle
+              ,ts.task_content as taskContent
+              ,ts.task_start as taskStart
+              ,ts.task_end as taskEnd
+              ,ts.task_name as taskName
+              ,ts.task_non as taskNon
+              ,ts.task_mul as taskMul
+              ,ts.plan_no as planNo
+         from tb_task ts
+        where ts.plan_no = #{planNo}
+	</select>
+	
+	
+	<!-- 제출 명단  -->
+	<select id="tasksendinfo" resultType="kr.happyjob.study.tut.model.TaskSendModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.tasksendinfo */
+		
+		select sn.send_no as sendNo
+              ,sn.plan_no as planNo
+              ,sn.send_title as sendTitle
+              ,DATE_FORMAT(sn.send_date, '%Y-%m-%d') as sendDate
+              ,us.name as stdName
+         from tb_send sn
+              inner join tb_userinfo us on us.loginId = sn.loginID
+        where sn.plan_no = ${planNo}   
+        LIMIT #{startNum}, #{pageSize}    
+	</select>
+	<!-- 명단 목록 갯수 -->
+	<select id="tasksnedtCnt" resultType="int">
+		/* kr.happyjob.study.tut.dao.TaskDao.tasksnedtCnt */
+		
+		select count(*)
+		 from tb_send sn
+	      where sn.plan_no = #{planNo}
+	</select>
+
+	<!-- 과제 제출 상세보기 -->
+	<select id="taskSendDetail" resultType="kr.happyjob.study.tut.model.TaskSendModel">
+		/* kr.happyjob.study.tut.dao.TaskDao.taskSendDetail */
+		
+        	select sn.send_no as sendNo
+              ,sn.plan_no as planNo
+              ,sn.send_title as sendTitle
+              ,sn.send_content as sendContent
+              ,DATE_FORMAT(sn.send_date, '%Y-%m-%d') as sendDate
+              ,sn.send_file as sendFile
+              ,sn.send_non as sendNon
+              ,sn.send_mul as sendMul
+              ,us.name as stdName
+         from tb_send sn
+              inner join tb_userinfo us on us.loginId = sn.loginID
+        where sn.send_no = ${sendNo}       
+	</select>
+
+	<!-- 과제 저장  -->
+	<insert id="taskInsert">
+		<selectKey resultType="int" keyProperty="taskNo" order="BEFORE">
+			select ifnull(max(task_no),0) + 1 from tb_task where plan_no = #{planNo}
+		</selectKey>
+		insert into tb_task
+				(
+					 task_no
+				   , plan_no 
+				   , task_title 
+				   , task_content
+				   , task_start
+				   , task_end
+				   , task_name
+				   , task_mul
+				   , task_non	
+				) values(
+				    #{taskNo}
+				   ,#{planNo}
+				   ,#{title}				
+				   ,#{content}				
+				   ,#{taskStart}				
+				   ,#{taskEnd}				
+				   ,#{fileInfo.file_nm}				
+				   ,#{fileInfo.file_loc}				
+	               ,#{fileInfo.file_lloc}				
+				)
+				
+	</insert>
+    <!-- 과제 수정  -->
+	<update id="taskUpdate">
+		update tb_task
+			set  plan_no = #{ planNo }
+				, task_title = #{ title }
+				, task_content = #{ content }
+				, task_start = #{ taskStart }
+				, task_end = #{ taskEnd }
+				, task_name = #{ fileInfo.file_nm }
+				, task_non = #{ fileInfo.file_lloc }
+				, task_mul = #{ fileInfo.file_loc }
+			where plan_no = #{planNo}
+	
+	</update>
+	
+</mapper>

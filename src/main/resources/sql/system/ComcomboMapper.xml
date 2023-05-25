@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.system.dao.ComnComboDao">
+
+
+
+
+	<!-- 시험 목록 조회 -->
+	<select id="selecttestlist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectproductlist*/
+			select test_no as cd
+			        ,test_title as name
+			  from tb_test 
+			 order by test_no
+	</select>
+  
+    <!-- 사용자  목록 조회 -->
+  <select id="selectuserlist" resultType="kr.happyjob.study.system.model.comcombo">
+    /*kr.happyjob.study.system.dao.ComnComboDao.selectdivproductlist*/
+			select loginID as cd
+			       ,name
+			  from tb_userinfo
+			 <where>
+			  <if test="(code != null) and (!code.equals(''))">
+			      AND user_type = #{code}
+			  </if>
+			</where>  
+			 order by loginID
+  </select>   
+  
+  	<!-- 로그인 사용자 강의목록 조회 -->
+	<select id="selectlecbyuserlist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectlecbyuserlist*/			
+		  select dc.detail_code as cd 
+                  ,dc.detail_name as name
+           from tb_lecture lt
+                  inner join tb_detail_code dc on lt.lecture_no = dc.detail_code and dc.group_code = 'lecture_no'
+         where lt.loginID = #{loginId} and lt.lecture_confirm="N"
+          order by dc.detail_code	 
+			 
+	</select>
+	
+	 	<!-- 로그인 사용자 강의목록 조회 -->
+	<select id="selectlecseqbyuserlist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectlecseqbyuserlist*/			
+		  select lt.lecture_seq as cd 
+                  ,dc.detail_name as name
+           from tb_lecture lt
+                  inner join tb_detail_code dc on lt.lecture_no = dc.detail_code and dc.group_code = 'lecture_no'
+                  inner join tb_test t on t.test_no=lt.test_no and t.test_no= #{test_no}
+         where lt.loginID = #{loginId} and lt.lecture_confirm = "N"
+          order by lt.lecture_seq	 
+			 
+	</select>
+	
+    <!-- 로그인 사용자 강의실목록 조회 -->
+	<select id="selectroomlist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectroomlist*/			
+		select rm.room_seq as cd
+                ,dc.detail_name as name
+         from tb_room rm
+                 inner join tb_detail_code dc on dc.detail_code = rm.room_no and dc.group_code = 'room_no'
+            <where>
+			  <if test="(roomtype != null) and (!roomtype.equals(''))">
+			      AND rm.room_status = #{roomtype}
+			  </if>
+			</where>                            
+        order by rm.room_seq
+	</select>	
+	
+	<!-- 강의 수강 사용자  목록 조회 -->
+	<select id="selectuserbyleclist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectuserbyleclist*/	
+		select st.loginID  as cd 
+              ,concat(ui.name,'(',st.loginID,')') as name
+          from tb_student st
+               inner join tb_userinfo ui on ui.loginID =st.loginID and ui.user_type = 'A'
+         where st.lecture_seq = #{code}                   
+        order by concat(ui.name,'(',st.loginID,')')
+	</select>
+	
+	 	<!-- 로그인 사용자 강의목록(시퀀스) 조회 -->
+	<select id="selectlecseqUserlist" resultType="kr.happyjob.study.system.model.comcombo">
+		/*kr.happyjob.study.system.dao.ComnComboDao.selectlecseqUserlist*/			
+		  select lt.lecture_seq as cd 
+                  ,dc.detail_name as name
+           from tb_lecture lt
+                  inner join tb_detail_code dc on lt.lecture_no = dc.detail_code and dc.group_code = 'lecture_no'
+         where lt.loginID = #{loginId} and lt.lecture_confirm = "N"
+          order by lt.lecture_seq	 
+			 
+	</select>	
+	
+	
+	
+</mapper>

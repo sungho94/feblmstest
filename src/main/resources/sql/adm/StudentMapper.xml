@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.StudentDao">
+
+	<!-- 학생관리 강의 목록 조회 -->
+	<select id="lectureList" resultType="kr.happyjob.study.adm.model.StudentModel">
+		/*kr.happyjob.study.adm.dao.StudentDao.lectureList*/
+		select    (@rownum:=@rownum+1) as num
+          		, lc.lecture_no
+          		, lc.lecture_seq
+          		, ui.name
+          		, dc.detail_name as lecture_name
+    	    	, lc.lecture_start
+    		    , lc.lecture_end
+  		from (select @rownum := 0) tmp, tb_lecture lc 
+  			inner join tb_detail_code dc on dc.group_code='lecture_no' and dc.detail_code = lc.lecture_no
+       	    inner join tb_userinfo ui ON ui.loginID = lc.loginID
+  	   <where>
+    		<if test="(lname != null) and (!lname.equals(''))">
+    			and dc.detail_name like concat('%' #{lname}, '%')
+    		</if>
+    	</where>
+		ORDER BY num, lc.lecture_no asc
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 학생관리 강의 목록 조회수 -->
+	<select id="lectureListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.SurveyDao.lectureListCnt*/
+		select count(*)
+  		from tb_lecture lc 
+  			inner join tb_detail_code dc on dc.group_code='lecture_no' and dc.detail_code = lc.lecture_no
+       	    inner join tb_userinfo ui ON ui.loginID = lc.loginID
+       	<where>
+    		<if test="(lname != null) and (!lname.equals(''))">
+    			and dc.detail_name like concat('%' #{lname}, '%')
+    		</if>
+    	</where>
+	</select>
+	
+	<!-- 학생관리 학생 목록 조회 -->
+	<select id="studentList" resultType="kr.happyjob.study.adm.model.StudentModel">
+		select   ui.name as name
+			   , dc.detail_name as lecture_name
+       		   , ui.loginID as loginID
+     	 	   , ui.user_hp as hp
+    		   , SUBSTRING(ui.user_regdate,1,10) as regdate
+  		from tb_student st
+    		inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+    		inner join tb_userinfo ui ON ui.loginID = st.loginID
+    		inner join tb_detail_code dc on dc.group_code='lecture_no' and dc.detail_code = lc.lecture_no
+    		
+    	<where>
+    		<if test="(sname != null) and (!sname.equals(''))">
+    			and name like concat('%' #{sname}, '%')
+    		</if>
+    		and st.lecture_seq = #{lecSeq}
+    	</where>
+    	group by dc.detail_name, ui.loginID
+    	ORDER BY name DESC
+		LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 학생관리 학생 목록 조회 카운트 -->
+	<select id="studentListCnt" resultType="int">
+		select count(*)
+		from tb_student st
+    		inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+    		inner join tb_userinfo ui ON ui.loginID = st.loginID
+    		inner join tb_detail_code dc on dc.group_code='lecture_no' and dc.detail_code = lc.lecture_no
+    	<where>
+    		<if test="(sname != null) and (!sname.equals(''))">
+    			and name like concat('%' #{sname}, '%')
+    		</if>
+    		and st.lecture_seq = #{lecSeq}
+    	</where>
+	</select>
+	
+	<!-- 학생 상세조회 -->
+	<select id="studentSelect" resultType="kr.happyjob.study.adm.model.StudentModel">
+		select   ui.name as name
+      		   , ui.loginID as loginID
+     		   , ui.user_email as email
+    		   , SUBSTRING(ui.user_birthday,1,10) as birthday
+    		   , ui.user_address as address
+    		   , ui.user_hp as hp
+    		   , SUBSTRING(ui.user_regdate,1,10) as regdate
+    		   , lc.lecture_no
+    		   , dc.detail_name as lecture_name
+    		   , lc.lecture_start
+    		   , lc.lecture_end
+    		   , st.student_lecture
+ 		from tb_student st
+    		inner join tb_lecture lc ON lc.lecture_seq = st.lecture_seq
+    		inner join tb_userinfo ui ON ui.loginID = st.loginID
+    		inner join tb_detail_code dc on dc.group_code='lecture_no' and dc.detail_code = lc.lecture_no
+    	where st.loginID = #{loginID} and st.lecture_seq = #{lecSeq}
+    	group by ui.loginID
+	
+	</select>
+	
+	<!-- 학생 수강 취소 -->
+	<update id="studentCancel">
+		update tb_student 
+			set student_lecture = 'N'
+		where loginID = #{loginID} and lecture_seq = #{lec_seq}
+	</update>	
+</mapper>

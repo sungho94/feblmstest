@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.std.dao.RegSubjectDao">
+
+	<!-- 수강 목록 조회 -->
+	<select id="regSubjectList" resultType="kr.happyjob.study.std.model.RegSubjectModel">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.regSubjectList*/
+		select   (@rownum := @rownum + 1) as num
+     	 	   , tdc.detail_name as lecture_name
+        	   , ui.name as teacher_name
+     		   , lc.lecture_start
+     		   , lc.lecture_end
+      		   , lc.loginID
+      		   , dc.detail_name as room_name
+      		   , lc.lecture_seq
+      		   , lc.lecture_goal
+      		   , st.student_survey
+  		from (select @rownum := 0) tmp, tb_lecture lc
+    		inner join tb_userinfo ui on ui.loginID = lc.loginID
+    		inner join tb_student st on st.lecture_seq = lc.lecture_seq
+    		inner join tb_room ro on lc.room_seq = ro.room_seq
+    		inner join tb_detail_code dc on dc.group_code = 'room_no' and dc.detail_code = ro.room_no
+    		inner join tb_detail_code tdc on tdc.group_code = 'lecture_no' and tdc.detail_code = lc.lecture_no
+    	<where>
+    	<if test="(search != null) and (!search.equals(''))">
+			<choose>
+				<when test="select eq 'lecture'.toString()">
+					AND tdc.detail_name Like CONCAT('%',#{search},'%')
+				</when>
+				<when test="select eq 'name'.toString()">
+					and ui.name Like CONCAT('%',#{search},'%')
+				</when>
+				<otherwise>
+                    and ( 
+                          tdc.detail_name Like CONCAT('%',#{search},'%')
+                       or ui.name Like CONCAT('%',#{search},'%')
+                       )
+                  </otherwise>	
+			</choose>
+		</if>
+			and  st.loginID = #{loginID} and st.student_lecture = 'Y' and lc.lecture_confirm = 'N'
+		</where>
+    	order by num asc
+    	LIMIT #{startPage}, #{pageSize}
+	</select>
+	
+	<!-- 수강목록 조회 카운트 -->
+	<select id="regSubjectListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.regSubjectListCnt*/
+		select   count(*)
+  		from (select @rownum := 0) tmp, tb_lecture lc
+    		inner join tb_userinfo ui on ui.loginID = lc.loginID
+    		inner join tb_student st on st.lecture_seq = lc.lecture_seq
+    		inner join tb_room ro on lc.room_seq = ro.room_seq
+    		inner join tb_detail_code dc on dc.group_code = 'room_no' and dc.detail_code = ro.room_no
+    		inner join tb_detail_code tdc on tdc.group_code = 'lecture_no' and tdc.detail_code = lc.lecture_no
+    	<where>
+    	<if test="(search != null) and (!search.equals(''))">
+			<choose>
+				<when test="select eq 'lecture'.toString()">
+					AND tdc.detail_name Like CONCAT('%',#{search},'%')
+				</when>
+				<when test="select eq 'name'.toString()">
+					and ui.name Like CONCAT('%',#{search},'%')
+				</when>
+				<otherwise>
+                    and ( 
+                          tdc.detail_name Like CONCAT('%',#{search},'%')
+                       or ui.name Like CONCAT('%',#{search},'%')
+                       )
+                  </otherwise>	
+			</choose>
+		</if>
+			and  st.loginID = #{loginID} and st.student_lecture = 'Y' and lc.lecture_confirm = 'N'
+		</where>
+		
+	</select>
+	
+	<!-- 강의 목표 및 주차별 계획 조회 -->
+	<select id ="lecturePlanList" resultType="kr.happyjob.study.std.model.RegSubjectModel">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.lecturePlanList*/
+		 select  lc.lecture_goal
+		 	   , pl.plan_week
+     		   , pl.plan_goal
+    		   , pl.plan_content
+  		from tb_lecture lc
+        	inner join tb_student st on st.lecture_seq = lc.lecture_seq
+    		left outer join tb_plan pl ON lc.lecture_seq = pl.lecture_seq
+        where st.loginID = #{sloginID} and lc.lecture_seq = #{lecture_seq}
+		
+	</select>
+	
+	<!--
+	<select id ="lectureGoalList" resultType="kr.happyjob.study.std.model.RegSubjectModel">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.lectureGoalList*/
+		 select  lc.lecture_goal
+           	   , st.student_survey
+  		from tb_lecture lc
+        	inner join tb_student st on st.lecture_seq = lc.lecture_seq
+        where st.loginID = #{sloginID} and lc.lecture_seq = #{lecture_seq}
+        group by lecture_goal
+		
+	</select> -->
+	
+	<!-- 수강목록 조회 카운트 -->
+	<select id="lecturePlanListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.lecturePlanListCnt*/
+		select   count(*)
+  		from tb_lecture lc
+    		inner join tb_plan pl ON lc.lecture_seq = pl.lecture_seq
+    	where lc.lecture_seq = #{lecture_seq}
+		
+	</select>
+	
+	<!-- 설문조사 문항 -->
+	<select id ="surveyQuestionList" resultType="kr.happyjob.study.std.model.RegSubjectModel">
+		/*kr.happyjob.study.adm.dao.RegSubjectDao.surveyQuestionList*/
+		select   servey_no
+			   , serveyitem_queno
+			   , serveyitem_question
+			   , serveyitem_que_one
+			   , serveyitem_que_two
+			   , serveyitem_que_three
+			   , serveyitem_que_four
+			   , serveyitem_que_five
+  		from tb_serveyitem
+	</select>
+	
+	<!-- 설문조사 저장 -->
+	<insert id="saveSurvey">
+		insert into tb_servey
+				(   lecture_seq
+				  , servey_no
+				  , loginID
+				  , serveyitem_queno
+				  , servey_answer
+				)
+		values (
+					#{bslecture_seq}
+				  , #{servey_no}
+				  , #{loginID}
+				  , #{serveyitem_queno}
+				  , #{servey_answer}
+				)
+	</insert>
+	
+	<!-- 설문조사 여부 업데이트 -->
+	<update id="updateStudent">
+		update tb_student
+			set student_survey = 'Y'
+		where loginID = #{loginID} and lecture_seq = #{bslecture_seq}
+	</update>
+	
+</mapper>

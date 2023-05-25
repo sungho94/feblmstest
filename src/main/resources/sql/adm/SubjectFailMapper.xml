@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.happyjob.study.adm.dao.SubjectFailDao">
+
+	<!-- 강의가 종료된 리스트 불러오기 -->
+	<select id = "getSubjectFailList" resultType = "kr.happyjob.study.adm.model.SubjectFailModel">
+		SELECT  LE.lecture_seq AS 'LECTURESEQ', 
+				DC.detail_name AS 'LECTURENAME', 
+				LE.lecture_total AS 'LECTURETOTAL', 
+				LE.lecture_start AS 'LECTURESTART', 
+				LE.lecture_end AS 'LECTUREEND', 
+				DATEDIFF(LE.lecture_end, LE.lecture_start) + 1 as 'DAYS'
+		FROM    tb_lecture LE INNER JOIN tb_detail_code DC ON DC.group_code = 'lecture_no' AND LE.lecture_no = DC.detail_code 
+	   WHERE LE.lecture_confirm = "Y"
+			<if test="(!lectureName.equals('')) and (lectureName != null)">
+				AND DC.detail_name LIKE CONCAT("%", #{lectureName}, "%") 
+			</if>			
+			<if test="(!lectureStart.equals('')) and (lectureStart != null)">
+				AND LE.lecture_start <![CDATA[>=]]>  #{lectureStart}
+			</if>			
+			<if test="(!lectureEnd.equals('')) and (lectureEnd != null)">
+				AND LE.lecture_end <![CDATA[<=]]>  #{lectureEnd}
+			</if>			
+		LIMIT #{startPage}, #{endPage}
+	</select>
+	
+	<!-- 강의가 종료된 리스트 카운트 -->
+	<select id = "getSubjectFailTotal" parameterType = "java.util.Map" resultType = "int">
+		SELECT  COUNT(*)
+		FROM    tb_lecture LE INNER JOIN tb_detail_code DC ON DC.group_code = 'lecture_no' AND LE.lecture_no = DC.detail_code 
+		WHERE LE.lecture_confirm = "Y"
+			<if test="!lectureName.equals('') and lectureName != null">
+				AND DC.detail_name LIKE CONCAT("%", #{lectureName}, "%") 
+			</if>
+			<if test="(!lectureStart.equals('')) and (lectureStart != null)">
+				AND LE.lecture_start <![CDATA[>=]]>  #{lectureStart}
+			</if>			
+			<if test="(!lectureEnd.equals('')) and (lectureEnd != null)">
+				AND LE.lecture_end <![CDATA[<=]]>  #{lectureEnd}
+			</if>
+	</select>
+	
+	<!-- 특정 과목의 과락 및 통과 인원 불러오기 -->
+	<select id="getSubjectFailRatio" parameterType = "java.util.Map" resultType = "kr.happyjob.study.adm.model.SubjectFailModel">
+		SELECT		LE.lecture_seq AS 'LECTURESEQ',
+					COUNT(DISTINCT UP.loginId) + COUNT(DISTINCT DW.loginId) AS 'TOTAL',
+					COUNT(DISTINCT UP.loginId) AS 'PASS',
+					COUNT(DISTINCT DW.loginId) AS 'FAIL'
+		FROM 		tb_lecture LE LEFT OUTER JOIN ( SELECT 	LE.lecture_seq ,
+															LE.test_no ,
+															RE.loginID ,
+															SUM(RE.SCORE) AS 'SCORE'
+													FROM 	tb_lecture LE INNER JOIN ( SELECT 		LE.lecture_seq ,
+																									RE.test_no ,
+																									RE.question_no ,
+																									RE.loginID ,
+																									CASE
+																										WHEN RE.result_answer = QU.question_answer
+																											THEN QU.question_score
+																									ELSE 0
+																									END 'SCORE'
+																					   FROM 		tb_lecture LE INNER JOIN tb_question QU ON LE.test_no = QU.test_no
+																											  	  INNER JOIN tb_result RE ON LE.lecture_seq = RE.lecture_seq 
+																																	  	  AND QU.question_no = RE.question_no 
+																																	  	  AND QU.test_no = RE.test_no
+																					   GROUP BY 	LE.lecture_seq , RE.test_no , RE.loginID , RE.question_no ) RE ON LE.lecture_seq = RE.lecture_seq 
+																					   																			   AND LE.test_no = RE.test_no
+												   GROUP BY LE.lecture_seq , LE.test_no , RE.loginID
+												   HAVING 	SUM(RE.SCORE) <![CDATA[>=]]> 60 ) UP ON LE.lecture_seq = UP.lecture_seq
+							 	  LEFT OUTER JOIN ( SELECT 	LE.lecture_seq ,
+															LE.test_no ,
+															RE.loginID ,
+															SUM(RE.SCORE) AS 'SCORE'
+													FROM 	tb_lecture LE INNER JOIN ( SELECT 		LE.lecture_seq ,
+																									RE.test_no ,
+																									RE.question_no ,
+																									RE.loginID ,
+																									CASE
+																										WHEN RE.result_answer = QU.question_answer
+																											THEN QU.question_score
+																									ELSE 0
+																									END 'SCORE'
+																					   FROM 		tb_lecture LE INNER JOIN tb_question QU ON LE.test_no = QU.test_no
+																											  	  INNER JOIN tb_result RE ON LE.lecture_seq = RE.lecture_seq 
+																																	  	  AND QU.question_no = RE.question_no 
+																																	  	  AND QU.test_no = RE.test_no
+																					   GROUP BY 	LE.lecture_seq , RE.test_no , RE.loginID , RE.question_no ) RE ON LE.lecture_seq = RE.lecture_seq 
+																					   																			   AND LE.test_no = RE.test_no
+												   GROUP BY LE.lecture_seq , LE.test_no , RE.loginID
+												   HAVING 	SUM(RE.SCORE) <![CDATA[<]]> 60 ) DW ON LE.lecture_seq = DW.lecture_seq
+		WHERE		LE.lecture_seq = #{lectureSeq}
+		GROUP BY 	LE.lecture_seq
+	</select>
+
+</mapper>

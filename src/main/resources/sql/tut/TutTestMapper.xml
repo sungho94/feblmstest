@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.tut.dao.TutTestDAO">
+
+<select id="testList" resultType="kr.happyjob.study.tut.model.TutTestModel">
+	SELECT 
+		 t.test_no
+		,t.test_title
+	FROM tb_test t
+		<where>
+			<if test="(testSearch != null) and (!testSearch.equals(''))">
+				      t.test_no = #{testSearch}
+			</if>
+		</where>
+		ORDER BY test_no DESC
+		LIMIT #{startnum},#{pageSize}
+</select>
+<select id="testListCnt" resultType="int">
+	SELECT COUNT(*)
+	FROM tb_test t
+	<where>
+			<if test="(testSearch != null) and (!testSearch.equals(''))">
+				      t.test_no = #{testSearch}
+			</if>
+		</where>
+</select>
+
+<select id = "testDetail" resultType="kr.happyjob.study.tut.model.TutTestModel">
+	SELECT test_no
+      			,test_title
+  	FROM tb_test 
+  	WHERE test_no=#{test_no}
+</select>
+<!-- <select id="testDateView" resultType="kr.happyjob.study.tut.model.TutTestModel">
+	SELECT test_start
+				,test_end
+	FROM tb_lecture
+	WHERE test_no=#{test_no} AND lecture_seq=#{lecture_seq}
+</select> -->
+<!-- <select id = "testDetailSelect"  resultType="Map" >
+	SELECT 
+        t.test_no
+       ,t.test_title
+       ,lc.lecture_seq
+       ,dc.detail_name as lecture_name
+	 FROM tb_test t
+    	left outer join tb_lecture lc on lc.test_no = t.test_no
+    	left outer join tb_detail_code dc on lc.lecture_no=dc.detail_code
+ 	WHERE t.test_no=#{test_no} and lc.lecture_confirm="N"
+ 	
+</select> -->
+<select id="questionList" resultType="kr.happyjob.study.tut.model.TutTestModel">
+	SELECT  
+		  test_no	
+	     ,question_no
+	     ,question_ex
+	     ,question_answer
+	     ,question_one
+	     ,question_two
+	     ,question_three
+	     ,question_four
+ 	FROM tb_question
+ 	WHERE test_no = #{test_no}
+ 	ORDER BY question_no DESC
+	LIMIT #{startnum},#{pageSize}
+</select>
+<select id="questionListCnt" resultType="int">
+	SELECT count(*)
+	FROM tb_question
+	WHERE test_no=#{test_no} 
+</select>
+
+<select id = "questionDetail" resultType="kr.happyjob.study.tut.model.TutTestModel">
+	SELECT  
+		  test_no
+	     ,question_no
+	     ,question_ex
+	     ,question_answer
+	     ,question_one
+	     ,question_two
+	     ,question_three
+	     ,question_four
+	     ,question_score
+ 	FROM tb_question
+ 	WHERE test_no = #{test_no} AND question_no=#{question_no}
+</select>
+<update id="questionUpdate">
+			UPDATE tb_question
+					SET question_ex = #{question_ex}
+						  ,question_answer =  #{question_answer}
+						  ,question_one= #{question_one}
+						  ,question_two= #{question_two}
+						  ,question_three= #{question_three}
+						  ,question_four= #{question_four}
+						  ,question_score=#{question_score}
+				WHERE test_no =#{test_no}
+					AND question_no=#{question_no}
+	</update>
+	<delete id="questionDelete">
+			DELETE FROM tb_question 
+				WHERE test_no =#{test_no}
+					AND question_no=#{question_no}
+	</delete>
+	<!-- 문제 새로등록 -->
+	<insert id="questionInsert">
+		<!-- <selectKey resultType="int" keyProperty="testNo" order="BEFORE">
+			select ifnull(max(test_no),0) + 1 from tb_task where question_no = #{questionNo}
+		</selectKey> -->
+		INSERT INTO tb_question
+				(
+					 test_no
+				   , question_no 
+				   , question_ex 
+				   , question_answer
+				   , question_one
+	     		   , question_two
+	     	       , question_three
+	     		   , question_four
+	     		   , question_score  
+				) VALUES (
+				    #{test_no}
+				   ,#{question_no}
+				   ,#{question_ex}				
+				   ,#{question_answer}				
+				   ,#{question_one}				
+				   ,#{question_two}				
+				   ,#{question_three}				
+				   ,#{question_four}							
+				   ,#{question_score}							
+				)
+	</insert>
+	
+	<!-- 시험 새로등록 -->
+	<insert id="testInsert">
+		INSERT INTO tb_test
+			(
+				 test_no
+				,test_title
+			) VALUES (
+				#{ test_no }
+			   ,#{ test_title }
+			)
+	</insert>
+	<!-- 시험수정 -->
+	<update id="testUpdate">
+			UPDATE tb_test
+					SET test_title = #{test_title}
+			WHERE test_no =#{test_no}
+	</update>
+	
+	<!-- 시험 삭제 -->
+	<delete id="testDelete">
+			DELETE FROM tb_test 
+				WHERE test_no =#{test_no}
+	</delete>
+</mapper>

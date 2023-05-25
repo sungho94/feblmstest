@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.TeacherListDao">
+
+	<!-- 강사 목록 조회 -->
+	<select id="teacherList" resultType="kr.happyjob.study.adm.model.TeacherListModel">
+		select   loginID
+		       , user_type
+		       , name
+		       , user_hp
+		       , user_email
+		       , DATE_FORMAT(user_regdate, '%Y-%m-%d') as user_regdate
+		  from tb_userinfo 
+	    where user_type in (select user_type
+                            from tb_userinfo
+                          where user_type = 'B' or user_type = 'D')
+		<if test ="(search != null) and (!search.equals(''))">			
+						and ( name LIKE CONCAT('%', #{search}, '%')
+						      or loginID LIKE CONCAT('%', #{search}, '%')
+						   )
+		</if>
+	    limit #{startNum}, #{pageSize}
+	</select>
+	
+	<!-- 강사 목록 수 -->
+	<select id="listCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.TeacherListDao.listCnt*/
+		select  count(*)
+ 		 from tb_userinfo
+	   where user_type in (select user_type
+                            from tb_userinfo
+                          where user_type = 'B' or user_type = 'D')
+                          
+		<if test ="(search != null) and (!search.equals(''))">			
+						and ( name LIKE CONCAT('%', #{search}, '%')
+						      or loginID LIKE CONCAT('%', #{search}, '%')
+						      )
+		</if>
+	</select>
+	
+	<!-- 유저타입 업데이트 -->
+	<update id="tutupdate">
+		update tb_userinfo
+			set user_type = #{userType}
+		  where loginID = #{loginID}
+	</update>
+	
+	<select id="tutInfoDetail" resultType="kr.happyjob.study.adm.model.TeacherListModel">
+	     select ui.loginID
+	             , ui.user_type
+	             , ui.name
+	             , ui.user_hp
+	             , ui.user_email
+	             , DATE_FORMAT(ui.user_regdate, '%Y-%m-%d') as user_regdate
+	             , ui.user_zipcode
+	             , ui.user_address
+	             , ui.user_birthday
+	             , IFNULL(GROUP_CONCAT(DISTINCT dc.detail_name),"진행 중인 강의가 없습니다.") as lectureName
+	        from tb_userinfo ui
+	             left outer join  tb_lecture le on le.loginID = ui.loginID
+	             left outer join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = le.lecture_no
+	      where user_type in (select user_type
+	                            from tb_userinfo
+	                           where user_type = 'B' or user_type = 'D')
+	           and ui.loginID = #{loginID} 
+	           and le.lecture_confirm = "N"   
+	</select>
+</mapper>

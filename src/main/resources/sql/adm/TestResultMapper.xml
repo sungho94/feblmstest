@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.adm.dao.TestResultDao">
+
+	<!-- 강의 목록 조회 -->
+	<select id="testResultLectureList" resultType="kr.happyjob.study.adm.model.TestResultModel">
+		/*kr.happyjob.study.adm.dao.ResumeDao.testResultLectureList*/
+		  SELECT tl.lecture_seq
+		      , tl.lecture_no
+		      , dc.detail_name AS lecture_name
+		      , ui.name
+		      , tl.test_no
+		      , tl.lecture_person
+		      , COUNT(CASE WHEN ts.student_test = 'Y' THEN 1 END) AS AFT
+		      , COUNT(CASE WHEN ts.student_test = 'N' 
+                        and ts.student_lecture = 'Y' THEN 1 END) AS BEF
+		  FROM tb_lecture tl
+		    INNER JOIN tb_student ts ON tl.lecture_seq = ts.lecture_seq
+		    INNER JOIN tb_detail_code dc ON dc.group_code = 'lecture_no' AND dc.detail_code = tl.lecture_no
+		    INNER JOIN tb_userinfo ui ON tl.loginID = ui.loginID
+		  <where>
+			 <if test = "(lectureNameSearch != null) and (!lectureNameSearch.equals(''))">
+				 AND detail_name LIKE CONCAT('%', #{lectureNameSearch}, '%')      	
+		     </if>
+		  </where>
+		  GROUP BY tl.lecture_seq, tl.lecture_no
+	    LIMIT #{startnum}, #{pageSize}
+	</select>
+	
+	<!-- 강의 목록 수 -->
+	<select id="testResultLectureListCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.ResumeDao.testResultLectureListCnt*/
+		  SELECT COUNT(DISTINCT tl.lecture_seq)
+		  FROM tb_lecture tl
+		    INNER JOIN tb_student ts ON tl.lecture_seq = ts.lecture_seq
+		    INNER JOIN tb_detail_code dc ON dc.group_code = 'lecture_no' AND dc.detail_code = tl.lecture_no
+		    INNER JOIN tb_userinfo ui ON tl.loginID = ui.loginID
+		  <where>
+			 <if test = "(lectureNameSearch != null) and (!lectureNameSearch.equals(''))">
+				 AND detail_name LIKE CONCAT('%', #{lectureNameSearch}, '%')      	
+		     </if>
+		  </where>
+	</select>
+	
+	<!-- 학생 목록 조회 -->
+	<select id="testResultSelect" resultType="kr.happyjob.study.adm.model.TestResultModel">
+		/*kr.happyjob.study.adm.dao.ResumeDao.testResultSelect*/
+		  SELECT  lc.lecture_seq 
+		        , lc.test_no
+		        , tr.loginID
+                , tr.name
+		        , SUM(tr.SCORE) AS 'SCORE'
+		    FROM tb_lecture lc 
+		      INNER JOIN ( SELECT lc.lecture_seq 
+		                         , tr.test_no 
+		                         , tr.question_no 
+		                         , tr.loginID 
+                             	 , ui.name
+		                         , CASE WHEN tr.result_answer = tq.question_answer
+		                                THEN tq.question_score
+		                                ELSE 0
+		                                END 'SCORE'
+		                                  FROM tb_lecture lc 
+		                                    INNER JOIN tb_question tq ON lc.test_no = tq.test_no
+		                                    INNER JOIN tb_result tr ON lc.lecture_seq = tr.lecture_seq 
+                                        	INNER JOIN tb_userinfo ui on tr.loginID = ui.loginID
+		                                    AND tq.question_no = tr.question_no 
+		                                    AND tq.test_no = tr.test_no
+		                                      GROUP BY    lc.lecture_seq , tr.test_no , tr.loginID , tr.question_no ) tr ON lc.lecture_seq = tr.lecture_seq 
+		                                      AND lc.test_no = tr.test_no
+		    WHERE lc.lecture_seq = #{lectureseq}
+        group by lc.lecture_seq, lc.test_no, tr.loginID, tr.name
+	    LIMIT #{startnum}, #{pageSize}
+	</select>
+	
+	<!-- 학생 목록 수 -->
+	<select id="testResultSelectCnt" resultType="int">
+		/*kr.happyjob.study.adm.dao.ResumeDao.testResultSelectCnt*/
+		  SELECT COUNT(DISTINCT tr.loginID)
+		    FROM tb_lecture lc 
+		      INNER JOIN ( SELECT lc.lecture_seq 
+		                         , tr.test_no 
+		                         , tr.question_no 
+		                         , tr.loginID 
+                             	 , ui.name
+		                         , CASE WHEN tr.result_answer = tq.question_answer
+		                                THEN tq.question_score
+		                                ELSE 0
+		                                END 'SCORE'
+		                                  FROM tb_lecture lc 
+		                                    INNER JOIN tb_question tq ON lc.test_no = tq.test_no
+		                                    INNER JOIN tb_result tr ON lc.lecture_seq = tr.lecture_seq 
+                                        	INNER JOIN tb_userinfo ui on tr.loginID = ui.loginID
+		                                    AND tq.question_no = tr.question_no 
+		                                    AND tq.test_no = tr.test_no
+		                                      GROUP BY    lc.lecture_seq , tr.test_no , tr.loginID , tr.question_no ) tr ON lc.lecture_seq = tr.lecture_seq 
+		                                      AND lc.test_no = tr.test_no
+		    WHERE lc.lecture_seq = #{lectureseq}
+	</select>
+	
+
+</mapper>

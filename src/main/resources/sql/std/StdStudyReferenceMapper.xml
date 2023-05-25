@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.std.dao.StdStudyReferenceDAO">
+
+   <!-- 강의 목록 조회 -->
+   <select id="LectureList" resultType="kr.happyjob.study.std.model.StdStudyReferenceModel">
+      /*kr.happyjob.study.std.dao.StdStudyReferenceDAO.LectureList*/      
+		select tl.lecture_seq
+		      , tl.loginID
+		      , ui.name
+		      , tl.test_no
+		      , tl.lecture_no
+		      , dc.detail_name as lecture_name
+		      , tl.lecture_person
+		      , tl.lecture_total
+		      , tl.lecture_goal
+		      , tl.lecture_start
+		      , tl.lecture_end
+		      , tl.lecture_confirm
+		  from tb_lecture tl
+			    inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = tl.lecture_no
+			    inner join tb_userinfo ui on tl.loginID = ui.loginID
+			    inner join tb_student ts on ts.lecture_seq = tl.lecture_seq
+          	<where>
+          		ts.loginID = #{loginID}
+           and  tl.lecture_confirm = 'N'
+           and  ts.student_lecture = 'Y'
+				<if test="(lecturename != null) and (!lecturename.equals(''))">
+				      and lecture_no = #{lecturename}     	
+				</if>
+			</where>
+	 ORDER BY lecture_seq DESC
+       LIMIT #{startnum}, #{pageSize}
+   </select>
+   
+   <!-- 강의 목록 총 갯수 조회 -->
+   <select id="LectureListCnt" resultType="int">
+      /*kr.happyjob.study.std.dao.StdStudyReferenceDAO.LectureListCnt*/      
+      SELECT	count(*)
+		  from tb_lecture tl
+			    inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = tl.lecture_no
+			    inner join tb_userinfo ui on tl.loginID = ui.loginID
+			    inner join tb_student ts on ts.lecture_seq = tl.lecture_seq
+          	<where>
+          		ts.loginID = #{loginID}
+           and  tl.lecture_confirm = 'N'
+           and  ts.student_lecture = 'Y'
+				<if test="(lecturename != null) and (!lecturename.equals(''))">
+				      and lecture_no = #{lecturename}     	
+				</if>
+			</where>
+   </select>
+   
+   <!-- 학습자료 목록 조회 -->
+   <select id="referenceselectlist" resultType="kr.happyjob.study.std.model.StdStudyReferenceModel">
+      /*kr.happyjob.study.std.dao.StdStudyReferenceDAO.referenceselectlist*/      
+		select tr.lecture_seq
+		      , tl.lecture_no
+		      , dc.detail_name as lecture_name
+		      , tr.reference_no
+		      , tr.loginID
+          	  , ui.name
+		      , tr.reference_title
+		      , tr.reference_content
+		      , tr.reference_date
+		      , tr.reference_file
+		      , tr.reference_non
+		      , tr.reference_mul
+		 from tb_reference tr
+			  inner join tb_lecture tl on tl.lecture_seq = tr.lecture_seq
+			  inner join tb_detail_code dc on dc.group_code ='lecture_no' and dc.detail_code = tl.lecture_no
+	          inner join tb_userinfo ui on tr.loginID = ui.loginID
+         where tr.lecture_seq = #{lectureseq}
+       LIMIT #{startnum}, #{pageSize}
+   </select>
+   
+   <!-- 학습자료 목록 총 갯수 조회 -->
+   <select id="referenceselectlistCnt" resultType="int">
+      /*kr.happyjob.study.std.dao.StdStudyReferenceDAO.referenceselectlistCnt*/      
+      SELECT	count(*)
+		 from tb_reference tr
+			  inner join tb_lecture tl on tl.lecture_seq = tr.lecture_seq
+			  inner join tb_detail_code dc on dc.group_code ='lecture_no' and dc.detail_code = tl.lecture_no
+	          inner join tb_userinfo ui on tr.loginID = ui.loginID
+         where tr.lecture_seq = #{lectureseq}
+   </select>
+   
+   <!-- 학습자료 조회 -->
+   <select id="referenceselect" resultType="kr.happyjob.study.std.model.StdStudyReferenceModel">
+      /*kr.happyjob.study.std.dao.StdStudyReferenceDAO.referenceselect*/      
+	  select tr.lecture_seq
+	      , tr.reference_no
+	      , tr.loginID
+	      , tr.reference_title
+	      , tr.reference_content
+	      , tr.reference_date
+	      , tr.reference_file
+	      , tr.reference_non
+	      , tr.reference_mul
+	  from tb_reference tr
+	  	inner join tb_lecture tl on tl.lecture_seq = tr.lecture_seq
+	  where tr.reference_no = #{referenceno}
+   </select>
+   
+</mapper>

@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.std.dao.LectureListDAO">
+
+   <!-- 강의 목록 조회 -->
+   <select id="lectureListSearch" resultType="kr.happyjob.study.std.model.LectureListModel">
+      /*kr.happyjob.study.std.dao.LectureListDAO.lectureListSearch*/      
+      SELECT		lc.lecture_seq
+      			  ,	lc.lecture_no
+                  , lc.loginID
+                  , dc.detail_name as lecture_name
+                  , tdc.detail_name as room_name
+                  , ui.name as teacher_name
+                  , lc.lecture_person
+                  , lc.lecture_total
+                  , lc.lecture_goal
+                  , lc.lecture_start
+                  , lc.lecture_end
+                  , lc.lecture_confirm
+	  	FROM	tb_lecture lc
+          		inner join tb_userinfo ui on lc.loginID = ui.loginID
+          		inner join tb_room tr on tr.room_seq = lc.room_seq
+          		inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+          		inner join tb_detail_code tdc on tdc.group_code = 'room_no' and tdc.detail_code = tr.room_no
+      <where>
+				lc.lecture_confirm = 'N'
+				<if test="(lectureName != null) and (!lectureName.equals(''))">
+				      and lc.lecture_no = #{lectureName}
+				</if>
+	  </where>
+       ORDER BY lc.lecture_seq DESC
+       LIMIT #{startnum}, #{pageSize}
+   </select>
+   
+   <!-- 강의 목록 총 갯수 조회 -->
+   <select id="lectureListCnt" resultType="int">
+      /*kr.happyjob.study.std.dao.LectureListDAO.lectureListCnt*/      
+      SELECT	count(*)
+	  	FROM	tb_lecture lc
+          		inner join tb_userinfo ui on lc.loginID = ui.loginID
+          		inner join tb_room tr on tr.room_seq = lc.room_seq
+          		inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+          		inner join tb_detail_code tdc on tdc.group_code = 'room_no' and tdc.detail_code = tr.room_no
+      <where>
+				lc.lecture_confirm = 'N'
+				<if test="(lectureName != null) and (!lectureName.equals(''))">
+				      and lc.lecture_no = #{lectureName}
+				</if>
+				
+				<if test="(searchWord != null) and (!searchWord.equals(''))">
+				      and lecture_total <![CDATA[>=]]> #{searchWord}      	
+				</if>
+	  </where> 
+   </select>
+   
+   <!-- 강의 목록 한개 조회 -->
+   <select id="lectureSelect" resultType="kr.happyjob.study.std.model.LectureListModel">
+      /*kr.happyjob.study.std.dao.LectureListDAO.lectureSelect*/      
+       SELECT		lc.lecture_seq
+      			  ,	lc.lecture_no
+                  , lc.loginID
+                  , dc.detail_name as lecture_name
+                  , tdc.detail_name as room_name
+                  , ui.name as teacher_name
+                  , lc.lecture_person
+                  , lc.lecture_total
+                  , lc.lecture_goal
+                  , lc.lecture_start
+                  , lc.lecture_end
+                  , lc.lecture_confirm
+                  , (
+          		                select ifnull(count(*),0)
+          		                  from tb_student
+          		                 where lecture_seq = #{lectureSeq}
+          		                   and loginID = #{loginID}
+          		     ) as cnt
+          		  , DATE_FORMAT(now(), '%Y-%m-%d') as today 
+	  	FROM	tb_lecture lc
+          		inner join tb_userinfo ui on lc.loginID = ui.loginID
+          		inner join tb_room tr on tr.room_seq = lc.room_seq
+          		inner join tb_detail_code dc on dc.group_code = 'lecture_no' and dc.detail_code = lc.lecture_no
+          		inner join tb_detail_code tdc on tdc.group_code = 'room_no' and tdc.detail_code = tr.room_no      	
+        WHERE   lc.lecture_seq = #{lectureSeq}
+
+   </select>
+  
+  <!-- 강의계획 조회 -->
+  <select id="lecturePlanSelect" resultType="kr.happyjob.study.std.model.LectureListModel">
+  	SELECT		lc.lecture_seq
+      		,	lc.lecture_no
+          , tp.plan_week
+          , tp.plan_goal
+          , tp.plan_content
+	  	FROM	tb_lecture lc
+      INNER JOIN tb_plan tp on lc.lecture_seq = tp.lecture_seq
+      
+  	WHERE lc.lecture_seq = #{lectureSeq}
+  </select>
+  
+   <!-- 강의계획 목록 총 갯수 조회 -->
+  <select id="lecturePlanCnt" resultType="int">
+  	SELECT	count(*)
+	FROM	tb_lecture lc
+      INNER JOIN tb_plan tp on lc.lecture_seq = tp.lecture_seq  
+  	WHERE lc.lecture_seq = #{lectureSeq}
+  </select>
+  
+   <insert id="studentInsert">
+		insert into tb_student
+			(
+				lecture_seq,
+ 				loginID, 
+ 				student_date, 
+ 				student_lecture, 
+ 				student_survey, 
+ 				student_test 
+			)values(
+				#{lectureSeq},
+				#{loginId},
+				DATE_FORMAT(now(), '%Y-%m-%d'),
+				'N',
+				'N',
+				'N'
+			)		
+	</insert>
+   
+</mapper>

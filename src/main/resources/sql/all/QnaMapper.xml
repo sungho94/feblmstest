@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="kr.happyjob.study.all.dao.QnaDao">
+	
+	<!-- 로그인 정보 가져오기 -->
+	<select id = "userinfo" resultType="kr.happyjob.study.all.model.QnaModel">
+	select  loginID
+		  , name
+ 	  from tb_userinfo
+		where loginID = #{loginID}
+	</select>
+
+	<!-- QnA 목록 조회 -->
+<!-- 	<select id = "qnalist" resultType="kr.happyjob.study.all.model.QnaModel">
+     select tq.qna_no, tq.qna_title, tq.qna_date, tu.loginID, tq.qna_count, tq.qna_content, tu.name
+ 	  from tb_qna tq
+	  inner join tb_userinfo tu
+ 		ON tu.loginID = tq.loginID
+ 		<where>
+ 			<if test="(qnasearch != null) and (!qnasearch.equals(''))">
+ 				and tu.name = #{qnasearch}
+ 			</if>
+ 		</where>
+ 	 LIMIT #{startnum}, #{pageSize}
+	</select> -->
+	<select id = "qnalist" resultType="kr.happyjob.study.all.model.QnaModel">
+     select tq.qna_no, tq.qna_title, tq.qna_date, tu.loginID, tq.qna_count, tq.qna_content, tu.name
+ 	  from tb_qna tq
+	  inner join tb_userinfo tu
+ 		ON tu.loginID = tq.loginID
+ 		<where>
+ 			<if test="(qnasearch != null) and (!qnasearch.equals(''))">
+ 				and tu.name LIKE CONCAT("%", #{qnasearch}, "%")
+ 			</if>
+ 		</where>
+ 	 ORDER BY tq.qna_no DESC
+ 	 LIMIT #{startnum}, #{pageSize}
+	</select>
+	
+	<!-- QnA 목록 총 갯수 조회 -->
+<!-- 	<select id="qnacnt" resultType="int">
+		/*kr.happyjob.study.all.dao.QnaDao.qnalist*/
+		SELECT count(*)
+		  FROM tb_qna
+	</select> -->
+	
+		<!-- QnA 목록 총 갯수 조회  수정본 -->
+	<select id="qnacnt" resultType="int">
+		/*kr.happyjob.study.all.dao.QnaDao.qnalist*/
+		SELECT count(*)
+		  FROM tb_qna tq
+		  inner join tb_userinfo tu ON tu.loginID = tq.loginID
+ 		<where>
+ 			<if test="(qnasearch != null) and (!qnasearch.equals(''))">
+ 				and tu.name LIKE CONCAT("%", #{qnasearch}, "%")
+ 			</if>
+ 		</where>
+	</select>
+	
+	<!-- QnA 내용 조회 -->
+	<select id="qnacontent" resultType="kr.happyjob.study.all.model.QnaModel">
+		/*kr.happyjob.study.all.dao.QnaDao.qnacontent*/
+		select tq.qna_no, tq.qna_title, tq.qna_date, tu.loginID, tq.qna_count, tq.qna_content, tu.name
+ 	  	  from tb_qna tq
+	 	 inner join tb_userinfo tu
+ 			ON tu.loginID = tq.loginID
+ 		 where tq.qna_no = #{qnano}
+ 		 ORDER BY tq.qna_no desc
+	</select>
+	
+	<!-- QnA 수정(insert) -->
+	<insert id="qnainsert">
+		<selectKey resultType="int" keyProperty="qna_no" order="BEFORE">
+			select IFNULL(MAX(qna_no+1),1)
+			from tb_qna
+		</selectKey>
+		insert tb_qna
+		(
+			  qna_no
+			, loginID
+			, qna_date
+			, qna_title
+			, qna_content
+			, qna_count
+		) values (
+			  #{qna_no}
+			, #{loginID}
+			, #{qna_new_date}
+			, #{qna_new_title}
+			, #{qna_new_content}
+			, 0
+		)
+	</insert>
+	
+	<!-- QnA 조회수 -->
+	<update id="viewcount">
+		update tb_qna
+  		   set qna_count = qna_count + 1
+  		 where qna_no = #{qnano}
+	</update>
+	
+	<!-- QnA 수정(update) -->
+	<update id="qnaupdate" >
+		update tb_qna
+   		   set qna_title = #{qna_new_title}
+             , qna_content = #{qna_new_content}
+ 		 where qna_no = #{qna_no}
+	</update>
+	
+	<!-- QnA 삭제(delete) -->
+	<delete id="qnadelete">
+		delete from tb_qna
+		 where qna_no = #{qna_no}
+	</delete>
+	
+	
+</mapper>
